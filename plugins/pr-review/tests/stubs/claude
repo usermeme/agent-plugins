@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+# Stub `claude` for tests/run.sh.
+#   claude agents --json   prints $STUB/agents.json
+#   claude -p ...          plays the reviewer: runs $STUB/reviewer.sh in the current folder
+#                          (the worktree), with $PRR pointing at prr.sh
+set -u
+printf 'claude %s\n' "$*" | tr '\n' ' ' >> "$STUB/calls.log"; echo >> "$STUB/calls.log"
+if [ "${1:-}" = agents ]; then cat "$STUB/agents.json" 2>/dev/null || echo '[]'; exit 0; fi
+n=$(( $(cat "$STUB/claude.n" 2>/dev/null || echo 0) + 1 )); echo "$n" > "$STUB/claude.n"
+[ -f "$STUB/reviewer.sh" ] && bash "$STUB/reviewer.sh" >> "$STUB/reviewer.out" 2>&1
+printf '{"session_id":"sess-%s","is_error":false,"result":"done"}\n' "$n"
