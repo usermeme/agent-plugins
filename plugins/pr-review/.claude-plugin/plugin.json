@@ -1,0 +1,8 @@
+{
+  "name": "pr-review",
+  "version": "0.1.0",
+  "description": "Automatic review loop for your own GitHub PRs: listener + one background reviewer session per PR, re-reviewing each new SHA until every review thread is resolved.",
+  "author": {
+    "name": "Raman Yankovich"
+  }
+}

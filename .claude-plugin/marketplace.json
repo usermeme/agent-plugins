@@ -1,0 +1,14 @@
+{
+  "name": "usermeme",
+  "owner": {
+    "name": "Raman Yankovich"
+  },
+  "description": "Personal Claude Code plugins.",
+  "plugins": [
+    {
+      "name": "pr-review",
+      "source": "./plugins/pr-review",
+      "description": "Automatic review loop for your own GitHub PRs: a listener session spawns a background reviewer per PR, which comments, notifies the authoring session, and re-reviews every new push until all threads are resolved."
+    }
+  ]
+}
