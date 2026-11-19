@@ -6,6 +6,7 @@
 #   ctl.sh find-repo <owner/name>          -> path of a local clone, or nothing
 #   ctl.sh reviewer-name <owner/name> <n>  -> reviewer session name for a PR
 #   ctl.sh spawn <pr_url> <repo_path> <listener_name> <origin_name|-> <permission_mode>
+#                                         (env: PR_REVIEW_MAX_ROUNDS, default 10, 0 = no cap)
 #   ctl.sh stop <owner/name> <n> <repo_path>
 set -euo pipefail
 
@@ -65,7 +66,9 @@ case "${1:-}" in
       git -C "$repo_path" worktree add --quiet --detach "$wt" FETCH_HEAD
     fi
 
-    prompt="/pr-review:review pr=$pr_url listener=$listener origin=$origin"
+    # Backstop on automatic rounds; 0 = no cap (no-progress detection still applies).
+    max_rounds="${PR_REVIEW_MAX_ROUNDS:-10}"
+    prompt="/pr-review:review pr=$pr_url listener=$listener origin=$origin max_rounds=$max_rounds"
     # PR_REVIEW_PLUGIN_DIR: load the plugin from a checkout instead of the installed
     # copy (development and testing).
     plugin_args=()
