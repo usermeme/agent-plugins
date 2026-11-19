@@ -1,6 +1,6 @@
 ---
 name: review
-description: Reviewer role for one GitHub PR, run by a background session that the pr-review listener spawns inside a worktree of the PR's repo. Reviews the PR, posts comments, notifies the authoring session, then re-reviews each new SHA until every pr-review thread is resolved. Not for direct use.
+description: Reviewer role for one GitHub PR, run by a background session that the pr-review listener spawns inside a snapshot of the PR head. Reviews the PR, posts comments, notifies the authoring session, then re-reviews each new SHA until every pr-review thread is resolved. Not for direct use.
 argument-hint: pr=<url> listener=<session> origin=<session|-> max_rounds=<n>
 disable-model-invocation: true
 ---
@@ -31,13 +31,20 @@ turn and wait. The listener wakes you with a message. Your conversation is your 
   carries a `PR-Review-Round:` trailer (it was written by the origin session at your request).
 - `stall`: consecutive rounds in which **none** of your threads got resolved.
 
-**A human was involved:** if any commit in `previous..HEAD` lacks a `PR-Review-Round:` trailer
-(check with `git log --format='%H%n%B' <previous>..HEAD`), the user pushed something
-themselves. Reset `auto` and `stall` to 0 before you evaluate this round.
+**A human was involved:** if any commit in `previous...head` lacks a `PR-Review-Round:` trailer
+(`gh api repos/<owner>/<repo>/compare/<previous>...<head> --jq '.commits[] | .commit.message'`),
+the user pushed something themselves. Reset `auto` and `stall` to 0 before you evaluate
+this round.
+
+## Your folder
+
+Your working folder is a **plain snapshot** of the PR head's files. It has no `.git`, so
+don't run `git`. Get history and diffs through `gh` (`gh pr diff`, `gh api …/compare/…`,
+`gh api …/commits`). Use Read, Grep and Glob on the snapshot for the surrounding code.
 
 ## Round 1 (on start)
 
-1. **Orient.** You are in a detached worktree at the PR head. This repo's CLAUDE.md has
+1. **Orient.** You are in a snapshot of the PR head. This repo's CLAUDE.md has
    already loaded. Also read `AGENTS.md` if it exists, and any docs they point to. If a
    `code-review` skill is available, load it and use its method.
 2. **Recover state.** Use GraphQL (`gh api graphql`) to fetch the PR's `reviewThreads`
@@ -54,7 +61,8 @@ themselves. Reset `auto` and `stall` to 0 before you evaluate this round.
 
 ## Every round after a `NEW-SHA` message
 
-1. `git fetch origin pull/<n>/head && git checkout --detach FETCH_HEAD`. Increment `round`.
+1. The listener has already refreshed your folder to the new head; re-read any file
+   before relying on it. Increment `round`.
    Apply the "a human was involved" check above. Then, if every new commit carries the
    trailer, increment `auto`.
 2. **Check your open threads.** For each one that is still unresolved:
@@ -65,7 +73,9 @@ themselves. Reset `auto` and `stall` to 0 before you evaluate this round.
 
    Then update `stall`: if at least one thread was resolved this round, set it to 0;
    otherwise increment it.
-3. **Look for new problems** in `git diff <previous>..HEAD`, with the whole PR as context.
+3. **Look for new problems** in
+   `gh api -H 'Accept: application/vnd.github.diff' repos/<owner>/<repo>/compare/<previous>...<head>`,
+   with the whole PR as context.
    The same standard as round 1 applies.
 
 ## Post and notify
