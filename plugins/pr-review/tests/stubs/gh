@@ -1,0 +1,71 @@
+#!/usr/bin/env bash
+# Stub `gh` for tests/run.sh. It keeps a fake GitHub in $STUB:
+#   pr-<n>.json   the raw GraphQL answer for PR <n>; write calls below change it
+#   search.json   the raw GraphQL answer for the watcher's search
+#   diff.txt      what `gh pr diff` prints
+#   state         what `gh pr view --json state` prints (default OPEN)
+#   fail          if present, every call fails
+#   calls.log     one line per call
+set -u
+printf 'gh %s\n' "$*" | tr '\n' ' ' >> "$STUB/calls.log"; echo >> "$STUB/calls.log"
+if [ -e "$STUB/fail" ]; then echo "stub gh: connection refused" >&2; exit 1; fi
+
+val() {  # val <key> "$@": the value of -f/-F <key>=...
+  local k="$1"; shift
+  while [ $# -gt 1 ]; do
+    case "$1" in -f|-F) case "$2" in "$k="*) printf '%s' "${2#"$k"=}"; return 0 ;; esac ;; esac
+    shift
+  done
+}
+after() {  # after <flag> "$@": the argument that follows <flag>
+  local f="$1"; shift
+  while [ $# -gt 1 ]; do [ "$1" = "$f" ] && { printf '%s' "$2"; return 0; }; shift; done
+}
+edit() {  # edit <n> <jq args...>: change pr-<n>.json in place
+  local n="$1"; shift
+  jq "$@" "$STUB/pr-$n.json" > "$STUB/pr.tmp" && mv "$STUB/pr.tmp" "$STUB/pr-$n.json"
+}
+pr_of_thread() { grep -l "\"$1\"" "$STUB"/pr-*.json | head -1 | sed -E 's#.*/pr-([0-9]+)\.json#\1#'; }
+
+case "$1 $2" in
+  "api graphql")
+    q=$(val query "$@"); t=$(val t "$@"); b=$(val b "$@")
+    case "$q" in
+      *"search("*) cat "$STUB/search.json" ;;
+      *addPullRequestReviewThreadReply*)
+        edit "$(pr_of_thread "$t")" --arg t "$t" --arg b "$b" \
+          '(.data.repository.pullRequest.reviewThreads.nodes[] | select(.id == $t) | .comments.nodes) += [{body: $b, author: {login: "me"}}]'
+        echo '{}' ;;
+      *resolveReviewThread*)
+        edit "$(pr_of_thread "$t")" --arg t "$t" \
+          '(.data.repository.pullRequest.reviewThreads.nodes[] | select(.id == $t) | .isResolved) = true'
+        echo '{}' ;;
+      *) cat "$STUB/pr-$(val number "$@").json" ;;
+    esac ;;
+  "api repos/"*)
+    n=$(printf '%s' "$2" | sed -E 's#^repos/[^/]+/[^/]+/(pulls|issues)/([0-9]+).*#\2#')
+    case "$2" in
+      */reviews)
+        f=$(after --input "$@"); cp "$f" "$STUB/review-$n.json"
+        seq=$(( $(cat "$STUB/seq" 2>/dev/null || echo 0) + 1 )); echo "$seq" > "$STUB/seq"
+        edit "$n" --slurpfile r "$f" --arg seq "$seq" \
+          '.data.repository.pullRequest.reviewThreads.nodes += [ $r[0].comments | to_entries[]
+             | { id: "T\($seq)-\(.key)", isResolved: false, isOutdated: false, path: .value.path,
+                 line: .value.line, originalLine: .value.line,
+                 comments: {nodes: [{body: .value.body, author: {login: "me"}}]} } ]'
+        echo '{"id": 1}' ;;
+      */issues/*/comments)
+        edit "$n" --arg b "$(val body "$@")" \
+          '.data.repository.pullRequest.comments.nodes += [{body: $b, author: {login: "me"}}]'
+        echo '{}' ;;
+      */commits) echo "abc1234 a commit" ;;
+      *) echo "stub gh: unhandled: $*" >&2; exit 1 ;;
+    esac ;;
+  "pr diff")
+    case "$*" in
+      *--name-only*) grep '^+++ b/' "$STUB/diff.txt" | sed 's#^+++ b/##' ;;
+      *) cat "$STUB/diff.txt" ;;
+    esac ;;
+  "pr view") cat "$STUB/state" 2>/dev/null || echo OPEN ;;
+  *) echo "stub gh: unhandled: $*" >&2; exit 1 ;;
+esac
