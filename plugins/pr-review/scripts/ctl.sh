@@ -16,7 +16,12 @@ reviewer_name() {
   printf 'pr-review-%s-%s' "$(printf '%s' "$repo" | tr -c 'A-Za-z0-9-' '-')" "$2"
 }
 
-worktree_path() { printf '%s/.claude/worktrees/pr-review-%s' "$1" "$2"; }
+# All reviewer worktrees live under one folder that the user trusts once in Claude Code
+# (trust is inherited by subfolders); a worktree inside an untrusted repo can't host a
+# background session.
+worktrees_root="${PR_REVIEW_WORKTREES:-$HOME/.pr-review-worktrees}"
+# worktree_path <owner/name> <n>
+worktree_path() { printf '%s/%s' "$worktrees_root" "$(reviewer_name "$1" "$2")"; }
 
 case "${1:-}" in
   session-name)
@@ -48,11 +53,8 @@ case "${1:-}" in
     number=$(gh pr view "$pr_url" --json number -q .number)
     owner_repo=$(printf '%s' "$pr_url" | sed -E 's#https://github.com/([^/]+/[^/]+)/pull/.*#\1#')
     name=$(reviewer_name "$owner_repo" "$number")
-    wt=$(worktree_path "$repo_path" "$number")
-
-    # Keep worktrees out of `git status` without touching tracked files.
-    exclude="$(git -C "$repo_path" rev-parse --path-format=absolute --git-common-dir)/info/exclude"
-    grep -qxF '.claude/worktrees/' "$exclude" 2>/dev/null || echo '.claude/worktrees/' >> "$exclude"
+    wt=$(worktree_path "$owner_repo" "$number")
+    mkdir -p "$worktrees_root"
 
     # Detached checkout of the PR head: works for forks, and the branch can stay
     # checked out in the author's working copy.
@@ -64,14 +66,18 @@ case "${1:-}" in
     fi
 
     prompt="/pr-review:review pr=$pr_url listener=$listener origin=$origin"
+    # PR_REVIEW_PLUGIN_DIR: load the plugin from a checkout instead of the installed
+    # copy (development and testing).
+    plugin_args=()
+    [ -n "${PR_REVIEW_PLUGIN_DIR:-}" ] && plugin_args=(--plugin-dir "$PR_REVIEW_PLUGIN_DIR")
     cd "$wt"
-    claude --bg -n "$name" --permission-mode "$mode" \
+    claude --bg -n "$name" --permission-mode "$mode" ${plugin_args[@]+"${plugin_args[@]}"} \
       --allowedTools "Read" "Glob" "Grep" "Agent" "Skill" "ListAgents" "SendMessage" \
         "Bash(gh pr view *)" "Bash(gh pr diff *)" "Bash(gh api *)" \
         "Bash(git fetch *)" "Bash(git checkout --detach *)" "Bash(git diff *)" \
         "Bash(git log *)" "Bash(git show *)" "Bash(git rev-parse *)" "Bash(git status*)" \
         "Bash(jq *)" \
-      "$prompt" | head -1
+      -- "$prompt" | head -1
     echo "name=$name worktree=$wt" ;;
 
   stop)
@@ -81,7 +87,7 @@ case "${1:-}" in
       claude stop "$name" >/dev/null 2>&1 || true
       claude rm "$name" >/dev/null 2>&1 || true
     fi
-    wt=$(worktree_path "$repo_path" "$number")
+    wt=$(worktree_path "$owner_repo" "$number")
     [ -d "$wt" ] && git -C "$repo_path" worktree remove --force "$wt"
     echo "stopped $name" ;;
 

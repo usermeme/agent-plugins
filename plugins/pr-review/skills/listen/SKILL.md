@@ -19,8 +19,13 @@ your turns short: every wake-up costs tokens.
    mode you run in (`acceptEdits`, `manual`, …). That is `MODE`. Reviewers must run in
    the same mode as your sessions, or their messages wait for the user's approval and
    the automatic loop stalls.
-3. Start the watcher with Bash, `run_in_background: true`: `SCRIPTS/watch.sh`.
-4. Tell the user in one line: listening as `LISTENER`, mode `MODE`.
+3. Reviewer worktrees live in `$PR_REVIEW_WORKTREES` (default `~/.pr-review-worktrees`).
+   Background sessions won't start in an untrusted folder, and you must not change trust
+   settings yourself. If a spawn fails with `Workspace not trusted`, ask the user to run
+   `mkdir -p ~/.pr-review-worktrees && cd ~/.pr-review-worktrees && claude` once in another
+   terminal and accept the trust prompt. Trust covers every subfolder.
+4. Start the watcher with Bash, `run_in_background: true`: `SCRIPTS/watch.sh`.
+5. Tell the user in one line: listening as `LISTENER`, mode `MODE`.
 
 Never poll with `sleep`, `ListAgents` loops or repeated `gh` calls. The watcher exits
 when there is work, and you are re-invoked then.
@@ -33,7 +38,7 @@ or `-`), `reviewer` (session name), `last_sha` (the last SHA handed to the revie
 ## When the watcher exits
 
 Read its stdout: one JSON event per line. Handle every event, then **restart the watcher**
-(step 3 above). Ignore any event whose `(url, head_sha)` you already handled.
+(step 4 above). Ignore any event whose `(url, head_sha)` you already handled.
 
 | Event | What to do |
 |---|---|
