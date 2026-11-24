@@ -1,4 +1,4 @@
-# claude-plugins
+# agent-plugins
 
 A personal [Claude Code](https://claude.com/claude-code) plugin marketplace.
 
@@ -11,14 +11,14 @@ A personal [Claude Code](https://claude.com/claude-code) plugin marketplace.
 In Claude Code:
 
 ```
-/plugin marketplace add usermeme/claude-plugins
+/plugin marketplace add usermeme/agent-plugins
 /plugin install pr-review@usermeme
 ```
 
 Or from a terminal, in one step:
 
 ```bash
-claude plugin install pr-review --marketplace usermeme/claude-plugins
+claude plugin install pr-review --marketplace usermeme/agent-plugins
 ```
 
 The repo is private. Claude Code clones it with your normal git credentials, so you need

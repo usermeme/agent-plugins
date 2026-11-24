@@ -34,7 +34,7 @@ A later push to a finished PR starts a fresh review of the new commits.
 ## Install
 
 ```bash
-claude plugin install pr-review --marketplace usermeme/claude-plugins
+claude plugin install pr-review --marketplace usermeme/agent-plugins
 ```
 
 Restart running sessions so the hook loads in them.
