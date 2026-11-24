@@ -1,0 +1,8 @@
+{
+  "name": "switchboard",
+  "version": "0.1.0",
+  "description": "One operator session (driven from your phone via Remote Control) receives every session's final reply, messages sessions back, answers their dialogs and opens new Claude sessions in tmux.",
+  "author": {
+    "name": "Raman Yankovich"
+  }
+}

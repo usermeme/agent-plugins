@@ -5,6 +5,7 @@ A personal [Claude Code](https://claude.com/claude-code) plugin marketplace.
 | Plugin | What it does |
 |---|---|
 | [`pr-review`](plugins/pr-review) | Automatic review loop for your own GitHub PRs: reviews each PR, sends findings to the Claude session that opened it, and re-reviews every push until all threads are resolved. |
+| [`switchboard`](plugins/switchboard) | Run all your Claude sessions from your phone: one operator session receives every session's final reply, messages sessions back, answers their dialogs and opens new sessions in tmux. |
 
 ## Install
 
@@ -13,6 +14,7 @@ In Claude Code:
 ```
 /plugin marketplace add usermeme/claude-plugins
 /plugin install pr-review@usermeme
+/plugin install switchboard@usermeme
 ```
 
 Or from a terminal, in one step:
