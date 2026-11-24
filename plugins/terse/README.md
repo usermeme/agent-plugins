@@ -6,7 +6,8 @@ Code's default instructions:
 - **Short replies.** Lead with the answer, no preamble or recap, usually under about 150
   words. Ask for an explanation or a write-up and you still get one.
 - **No code comments unless you ask.** No new inline comments, docstrings or TODOs.
-  Existing comments are kept, and directives such as `// eslint-disable-next-line`,
+  Existing comments are kept, and updated when Claude's change makes them wrong.
+  Directives such as `// eslint-disable-next-line`,
   `# noqa` or `//go:build` are still written when the code needs them.
 
 The rules live in [`output-styles/terse.md`](output-styles/terse.md).
