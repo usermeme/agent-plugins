@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+# Stub `claude` for tests/run.sh: `claude agents --json` prints $STUB/agents.json.
+set -u
+printf 'claude %s\n' "$*" >> "$STUB/calls.log"
+if [ "${1:-}" = agents ]; then cat "$STUB/agents.json" 2>/dev/null || echo '[]'; fi
+exit 0

@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+# Stub `tmux` for tests/run.sh. Every call is logged to $STUB/tmux.log.
+#   list-panes      prints $STUB/panes ("<pane_pid> <pane_id> <session>:<window>" lines)
+#   display         prints $STUB/display (default main:3); fails if $STUB/gone exists
+#   capture-pane    prints $STUB/screen
+#   has-session     fails if $STUB/no-session exists
+#   new-window, new-session   run $STUB/on-new.sh if present, print %99
+set -u
+printf '%s\n' "$*" >> "$STUB/tmux.log"
+case "${1:-}" in
+  list-panes) cat "$STUB/panes" 2>/dev/null ;;
+  display) [ -f "$STUB/gone" ] && exit 1; cat "$STUB/display" 2>/dev/null || echo main:3 ;;
+  capture-pane) cat "$STUB/screen" 2>/dev/null ;;
+  has-session) [ -f "$STUB/no-session" ] && exit 1; exit 0 ;;
+  new-window|new-session) [ -f "$STUB/on-new.sh" ] && bash "$STUB/on-new.sh"; echo %99 ;;
+  send-keys) ;;
+esac
+exit 0
