@@ -1,0 +1,8 @@
+{
+  "name": "terse",
+  "version": "0.1.0",
+  "description": "Always-on output style: short replies instead of essays, and no code comments unless you ask for them.",
+  "author": {
+    "name": "Raman Yankovich"
+  }
+}

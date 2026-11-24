@@ -5,6 +5,7 @@ A personal [Claude Code](https://claude.com/claude-code) plugin marketplace.
 | Plugin | What it does |
 |---|---|
 | [`pr-review`](plugins/pr-review) | Automatic review loop for your own GitHub PRs: reviews each PR, sends findings to the Claude session that opened it, and re-reviews every push until all threads are resolved. |
+| [`terse`](plugins/terse) | Always-on output style: short replies instead of essays, and no code comments unless you ask for them. Replaces your selected output style while enabled. |
 
 ## Install
 
